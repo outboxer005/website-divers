@@ -24,16 +24,17 @@ pip install -r requirements.txt
 
 ### CLI Usage
 ```bash
-python -m lally.cli crawl --url https://data.gov/ --depth 2 --concurrency 8 --output downloads
+python -m main.cli crawl --url https://data.gov/ --depth 2 --concurrency 8 --output downloads
 ```
 
 ### Web UI Usage
 Start the server:
 ```bash
-uvicorn lally.web:app --reload --port 8000
+uvicorn main.web:app --reload --port 8000
 ```
 Open `http://localhost:8000` in your browser. Paste a landing URL, choose depth/concurrency, optionally enable AI, and click Start Crawl. The table shows recent downloaded files.
 
 ### Notes
 - If using Postgres, ensure the database exists and `DB_URL` is set.
 - Downloads are stored under `downloads/` by default.
+
