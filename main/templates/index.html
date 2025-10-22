@@ -1,0 +1,94 @@
+{% extends 'layout.html' %}
+{% block content %}
+<form id="crawlForm" method="post" action="/crawl">
+  <div>
+    <label for="url">Landing URL</label>
+    <input id="url" name="url" type="text" placeholder="https://data.gov/" required />
+  </div>
+  <div>
+    <label for="depth">Depth</label>
+    <input id="depth" name="depth" type="number" min="0" max="3" value="2" />
+  </div>
+  <div>
+    <label for="concurrency">Concurrency</label>
+    <input id="concurrency" name="concurrency" type="number" min="1" max="64" value="8" />
+  </div>
+  <div>
+    <label for="per_host">Per-host concurrency</label>
+    <input id="per_host" name="per_host" type="number" min="1" max="16" value="2" />
+  </div>
+  <div>
+    <label for="enable_ai">AI Prioritization</label>
+    <select id="enable_ai" name="enable_ai">
+      <option value="false" selected>No</option>
+      <option value="true">Yes</option>
+    </select>
+  </div>
+  <div>
+    <label for="ai_model">AI Model</label>
+    <input id="ai_model" name="ai_model" type="text" value="gpt-4o-mini" />
+  </div>
+  <div class="grid-span-2">
+    <button id="startBtn" class="btn" type="submit">Start Crawl</button>
+    <button class="btn secondary" form="clearForm" type="submit">Clear Data</button>
+    <span id="status" class="muted">Idle</span>
+    <span id="progress" class="muted"></span>
+  </div>
+</form>
+
+<form id="clearForm" method="post" action="/clear"></form>
+
+<table>
+  <thead>
+    <tr>
+      <th>Time (UTC)</th>
+      <th>URL</th>
+      <th>File</th>
+      <th>Type</th>
+      <th>Size (KB)</th>
+      <th>Depth</th>
+      <th>AI Score</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in records %}
+    <tr>
+      <td>{{ r.timestamp }}</td>
+      <td><a href="{{ r.url }}" target="_blank" rel="noopener">link</a></td>
+      <td>{{ r.file_name or '-' }}</td>
+      <td>{{ r.content_type or '-' }}</td>
+      <td>{{ '%.1f'|format(r.file_size_kb or 0) }}</td>
+      <td>{{ r.depth }}</td>
+      <td>{{ r.ai_score if r.ai_score is not none else '-' }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7"><em class="muted">No results yet. Start a crawl above.</em></td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<script>
+  async function refreshStatus() {
+    try {
+      const res = await fetch('/status');
+      const data = await res.json();
+      const statusEl = document.getElementById('status');
+      const progressEl = document.getElementById('progress');
+      const startBtn = document.getElementById('startBtn');
+      if (data.crawling) {
+        statusEl.textContent = 'Crawling...';
+        startBtn.disabled = true;
+      } else {
+        statusEl.textContent = 'Idle';
+        startBtn.disabled = false;
+      }
+      const s = data.stats || {};
+      progressEl.textContent = `Fetched: ${s.fetched_pages||0} | Downloaded: ${s.downloaded_files||0} | Errors: ${s.errors||0}`;
+    } catch (e) {
+      // ignore
+    }
+  }
+  setInterval(refreshStatus, 1500);
+  refreshStatus();
+</script>
+{% endblock %}
